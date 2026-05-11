@@ -2,7 +2,7 @@
 
 MarpEditor is a single-page editor for building Marp presentations in Markdown. It combines a Monaco editor, a live Marp preview, local file handling, image storage, browser PDF printing, and a Tauri desktop shell for release builds.
 
-![MarpEditor Desktop](docs/screenshots/editor-desktop.png)
+![MarpEditor Desktop](docs/images/editor-desktop.png)
 
 ## Features
 
@@ -17,19 +17,19 @@ MarpEditor is a single-page editor for building Marp presentations in Markdown. 
 
 Customize themes, colors, fonts, slide sizes, and logos.
 
-![Style Panel](docs/screenshots/style-panel.png)
+![Style Panel](docs/images/style-panel.png)
 
 ### Export
 
 Export to Markdown, PDF, PowerPoint (desktop), or Google Slides.
 
-![Export Modal](docs/screenshots/export-modal.png)
+![Export Modal](docs/images/export-modal.png)
 
 ### Mobile
 
 Works on mobile devices with a responsive stacked layout.
 
-![Mobile Editor](docs/screenshots/editor-mobile.png)
+![Mobile Editor](docs/images/editor-mobile.png)
 
 ## Marp Compatibility
 
