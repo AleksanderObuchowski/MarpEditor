@@ -1,5 +1,12 @@
 import { Marp } from '@marp-team/marp-core'
+import polyfillSource from '@marp-team/marpit-svg-polyfill/lib/polyfill.browser.js?raw'
 import type { ThemeSettings } from '../types'
+
+// Inlined into iframe HTML so the polyfill runs in the iframe's own window context.
+// Fixes WebKit bug #23113 (foreignObject content not scaling with CSS-sized parent SVG)
+// which breaks Marp's multi-slide rendering in Tauri/WKWebView on macOS.
+// The bundle is a self-executing IIFE; it auto-detects WebKit and is a no-op elsewhere.
+const SVG_POLYFILL_SCRIPT = `<script>${polyfillSource}</script>`
 
 export function debounce<TArgs extends unknown[]>(
   fn: (...args: TArgs) => void,
@@ -211,12 +218,58 @@ export function renderMarp(markdown: string, images: Record<string, string>) {
   return { html, css, slides: slideCount || 1 }
 }
 
+function extractRenderedSlideSvg(html: string): SVGSVGElement | null {
+  if (typeof DOMParser === 'undefined') return null
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  return doc.querySelector('svg[data-marpit-svg]')
+}
+
+function renderPreviewSlides(markdown: string, images: Record<string, string>): {
+  html: string
+  css: string
+} {
+  const fullRender = renderMarp(markdown, images)
+  if (typeof DOMParser === 'undefined') {
+    return { html: fullRender.html, css: fullRender.css }
+  }
+
+  const parsed = parseMarkdownSlides(markdown)
+  const renderedSlides = parsed.slides
+    .map((slide) => buildMarkdownFromSlides(parsed.frontmatter, [slide.content]))
+    .map((slideMarkdown) => renderMarp(slideMarkdown, images).html)
+    .map(extractRenderedSlideSvg)
+    .filter((slide): slide is SVGSVGElement => slide !== null)
+
+  if (renderedSlides.length === 0) {
+    return { html: fullRender.html, css: fullRender.css }
+  }
+
+  const doc = document.implementation.createHTMLDocument('')
+  const marpit = doc.createElement('div')
+  marpit.className = 'marpit'
+
+  renderedSlides.forEach((slide, index) => {
+    slide.setAttribute('data-preview-slide-index', String(index))
+    const section = slide.querySelector('section')
+    if (section) {
+      section.id = String(index + 1)
+      section.setAttribute('data-marpit-pagination', String(index + 1))
+      section.setAttribute('data-marpit-pagination-total', String(renderedSlides.length))
+    }
+    marpit.appendChild(doc.importNode(slide, true))
+  })
+
+  return { html: marpit.outerHTML, css: fullRender.css }
+}
+
 export function generatePreviewHtml(
   markdown: string,
   theme: ThemeSettings,
   images: Record<string, string>
 ): string {
-  const { html, css } = renderMarp(markdown, images)
+  const { html, css } = renderPreviewSlides(markdown, images)
   const aspectRatio = theme.slideSize === '4:3' ? '4/3' : theme.slideSize === '16:10' ? '16/10' : '16/9'
 
   return `<!DOCTYPE html>
@@ -224,10 +277,11 @@ export function generatePreviewHtml(
 <head>
   <meta charset="UTF-8">
   <title>Presentation</title>
+  ${SVG_POLYFILL_SCRIPT}
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      background: #1a1a1a; 
+    body {
+      background: #1a1a1a;
       min-height: 100vh;
       padding: 32px 24px;
     }
@@ -236,21 +290,18 @@ export function generatePreviewHtml(
       display: flex !important;
       flex-direction: column;
       align-items: center;
+      gap: 32px;
     }
     .marpit > svg {
-      display: block !important;
-      width: 100% !important;
+      display: block;
+      width: 100%;
       max-width: 960px;
-      height: auto !important;
       aspect-ratio: ${aspectRatio};
       box-shadow: 0 24px 48px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.3);
       border-radius: 4px;
       overflow: hidden;
-      margin-bottom: 32px;
       break-after: page;
-    }
-    .marpit > svg:last-child {
-      margin-bottom: 0;
+      margin: 0;
     }
     section {
       background-color: ${theme.backgroundColor};
@@ -279,12 +330,14 @@ export function generatePreviewHtml(
         background: white; 
         padding: 0;
       }
+      .marpit {
+        gap: 0;
+      }
       .marpit > svg {
         box-shadow: none;
         border-radius: 0;
         max-width: none;
         page-break-after: always;
-        margin-bottom: 0;
         break-after: auto;
       }
     }
@@ -309,10 +362,11 @@ export function generatePresentationHtml(
 <head>
   <meta charset="UTF-8">
   <title>Presentation</title>
+  ${SVG_POLYFILL_SCRIPT}
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      background: #000; 
+    body {
+      background: #000;
       height: 100vh;
       width: 100vw;
       overflow: hidden;
