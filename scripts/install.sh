@@ -34,7 +34,30 @@ detect_platform() {
 }
 
 get_latest_version() {
-  curl -fsSL "$API_URL" | grep '"tag_name":' | sed -E 's/.*"tag_name": "([^"]+)".*/\1/'
+  local version=""
+
+  # Try gh CLI first (more reliable, uses auth)
+  if command -v gh >/dev/null 2>&1; then
+    version=$(gh release view --repo "$REPO" --json tagName -q '.tagName' 2>/dev/null || true)
+  fi
+
+  if [ -n "$version" ]; then
+    echo "$version"
+    return
+  fi
+
+  # Fallback: API with retries
+  local attempt=1
+  while [ "$attempt" -le 3 ]; do
+    version=$(curl -fsSL --max-time 10 "$API_URL" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"tag_name": "([^"]+)".*/\1/' || true)
+    if [ -n "$version" ]; then
+      echo "$version"
+      return
+    fi
+    warn "API request failed (attempt $attempt/3), retrying in 2s..."
+    sleep 2
+    attempt=$((attempt + 1))
+  done
 }
 
 download() {
