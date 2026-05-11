@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #1a1a1a;
+  --bg-editor: #222222;
+  --bg-panel: #2a2a2a;
+  --bg-charcoal: #333333;
+  --text-primary: #f5f2eb;
+  --text-secondary: #c8c4bc;
+  --accent: #c75b39;
+  --accent-hover: #b04d2e;
+  --accent-muted: rgba(199, 91, 57, 0.15);
+  --border-color: rgba(245, 242, 235, 0.08);
+  --shadow-float: 0 24px 48px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Newsreader", serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(245, 242, 235, 0.12);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 242, 235, 0.2);
+}
+
+/* Editor grid texture */
+.editor-texture {
+  background-image:
+    linear-gradient(rgba(245, 242, 235, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 242, 235, 0.015) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Button press animation */
+.btn-press {
+  transition: transform 150ms ease-out, background-color 150ms ease-out;
+}
+
+.btn-press:active {
+  transform: scale(0.96);
+}
+
+/* Slide transition */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.slide-enter {
+  animation: slideIn 200ms ease-out forwards;
+}
+
+/* Panel slide animations */
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.panel-enter {
+  animation: panelSlideIn 200ms ease-out forwards;
+}
+
+.monaco-faded-line {
+  opacity: 0.4 !important;
+}
+
+/* Marp slide styles */
+.marp-preview {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.marp-preview section {
+  background: white;
+  color: #1a1a1a;
+}
+
+/* Print styles for PDF export */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+}
