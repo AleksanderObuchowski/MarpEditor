@@ -91,20 +91,26 @@ The desktop PPTX command writes the current Markdown to a temporary file, runs M
 
 ## Install
 
+### One-liner (macOS & Linux)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AleksanderObuchowski/MarpEditor/main/scripts/install.sh | bash
+```
+
+Na Macu skrypt automatycznie pobierze DMG, skopiuje do `/Applications` i **usunie flagę quarantine** — bez żadnych kliknięć w GUI.
+
 ### macOS (Homebrew)
 
 ```bash
-brew tap twojanazwa/marpeditor
+brew tap AleksanderObuchowski/marpeditor
 brew install --cask marpeditor
+xattr -dr com.apple.quarantine /Applications/MarpEditor.app
 ```
-
-> If Gatekeeper blocks the app on first launch, run:  
-> `xattr -dr com.apple.quarantine /Applications/MarpEditor.app`
 
 ### Windows (Scoop)
 
 ```bash
-scoop bucket add marpeditor https://github.com/twojanazwa/scoop-marpeditor
+scoop bucket add marpeditor https://github.com/AleksanderObuchowski/scoop-marpeditor
 scoop install marpeditor
 ```
 
