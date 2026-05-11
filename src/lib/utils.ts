@@ -370,87 +370,53 @@ theme: default
 paginate: true
 ---
 
-<!-- _class: lead -->
-<!-- _paginate: false -->
+<!--
+_class: lead
+_paginate: false
+-->
 
-<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+# MarpEditor
 
-# **MarpEditor**
+Create beautiful presentations with **Markdown**
 
-<p style="font-size: 1.3em; opacity: 0.7; margin-top: 0.5em;">
-  Create beautiful presentations with Markdown
-</p>
-
-<p style="font-size: 0.9em; opacity: 0.5; margin-top: 2em;">
-  Edit on the left. Preview on the right.
-</p>
-
-</div>
+_Edit on the left. Preview on the right._
 
 ---
 
-<!-- _backgroundColor: #1a1a1a -->
-<!-- _color: #f5f2eb -->
-
-<div style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+<!--
+_backgroundColor: #1a1a1a
+_color: #f5f2eb
+-->
 
 # Why Markdown?
-
-<div style="font-size: 1.1em; line-height: 1.6; opacity: 0.85;">
 
 Focus on **content**, not formatting.
 
 > "The best slides are written, not designed."
 
-</div>
-
-</div>
-
 ---
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; height: 100%;">
+## Everything You Need
 
-<div>
-
-## Powerful Editor
+### Editor
 
 - **Monaco** syntax highlighting
 - Formatting toolbar
 - Drag & drop images
-- Paste images from clipboard
+- Paste from clipboard
 
-</div>
+### Preview
 
-<div>
-
-## Live Preview
-
-- Real-time Marp rendering
-- Slide navigation
+- Real-time slide rendering
+- Keyboard navigation
 - Presentation mode
 - PDF export
 
-</div>
-
-</div>
-
 ---
 
-<div style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+## Markdown Superpowers
 
-## Markdown = Superpowers
-
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
-
-<div>
-
-### Lists
-
-- Ordered & unordered
-- Nested items
-- Task lists
-
-### Tables
+Lists, tables, code, and quotes — all out of the box.
 
 | Feature | Status |
 |---------|--------|
@@ -458,63 +424,37 @@ Focus on **content**, not formatting.
 | Preview | ✓ |
 | Export | ✓ |
 
-</div>
-
-<div>
-
-### Code
-
 \`\`\`javascript
 function hello() {
   return "Hello, World!";
 }
 \`\`\`
 
-### Quotes
-
 > Design is intelligence made visible.
-
-</div>
-
-</div>
-
-</div>
 
 ---
 
-<!-- _backgroundColor: #c75b39 -->
-<!-- _color: #ffffff -->
-
-<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+<!--
+_backgroundColor: #c75b39
+_color: #ffffff
+-->
 
 # Make It Yours
 
-<p style="font-size: 1.2em; opacity: 0.9; margin-top: 1em;">
-  Themes · Colors · Fonts · Logos · Slide Sizes
-</p>
+Themes · Colors · Fonts · Logos · Slide Sizes
 
-<p style="font-size: 0.9em; opacity: 0.7; margin-top: 2em;">
-  Open the Style panel and start customizing.
-</p>
-
-</div>
+Open the **Style** panel and start customizing.
 
 ---
 
-<!-- _class: lead -->
-<!-- _paginate: false -->
-
-<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+<!--
+_class: lead
+_paginate: false
+-->
 
 # Thank You
 
-<p style="font-size: 1.2em; margin-top: 1em;">
-  Built with <strong>MarpEditor</strong>
-</p>
+Built with **MarpEditor**
 
-<p style="font-size: 0.85em; opacity: 0.5; margin-top: 2em;">
-  Try editing this slide →
-</p>
-
-</div>
+Try editing this slide →
 `

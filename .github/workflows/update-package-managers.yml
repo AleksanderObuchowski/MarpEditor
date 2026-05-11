@@ -1,0 +1,209 @@
+name: Update Package Managers
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  update-scoop:
+    name: Update Scoop Bucket
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release assets
+        id: release
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          ASSETS_JSON=$(gh release view "$TAG" \
+            --repo "${{ github.repository }}" \
+            --json assets -q '.assets')
+
+          MSI_NAME=$(echo "$ASSETS_JSON" | jq -r '.[] | select(.name | test("_x64_en-US\\.msi$"; "i")) | .name')
+          EXE_NAME=$(echo "$ASSETS_JSON" | jq -r '.[] | select(.name | test("_x64-setup\\.exe$"; "i")) | .name')
+
+          if [ -n "$MSI_NAME" ]; then
+            echo "asset_name=$MSI_NAME" >> "$GITHUB_OUTPUT"
+            echo "asset_ext=msi" >> "$GITHUB_OUTPUT"
+          elif [ -n "$EXE_NAME" ]; then
+            echo "asset_name=$EXE_NAME" >> "$GITHUB_OUTPUT"
+            echo "asset_ext=exe" >> "$GITHUB_OUTPUT"
+          else
+            echo "No Windows installer found in release. Skipping Scoop update."
+            exit 0
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download installer and compute SHA256
+        if: steps.release.outputs.asset_name != ''
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${{ steps.release.outputs.asset_name }}"
+          curl -fsSL -o installer "${URL}"
+          HASH=$(sha256sum installer | cut -d' ' -f1)
+          echo "hash=$HASH" >> "$GITHUB_ENV"
+          echo "Computed hash: $HASH"
+
+      - name: Checkout Scoop bucket repo
+        if: steps.release.outputs.asset_name != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/scoop-marpeditor
+          token: ${{ secrets.TAP_PUSH_TOKEN }}
+          path: scoop-repo
+
+      - name: Generate Scoop manifest
+        if: steps.release.outputs.asset_name != ''
+        run: |
+          VERSION="${{ steps.release.outputs.version }}"
+          ASSET="${{ steps.release.outputs.asset_name }}"
+          EXT="${{ steps.release.outputs.asset_ext }}"
+          HASH="${{ env.hash }}"
+          REPO="${{ github.repository }}"
+
+          mkdir -p scoop-repo/bucket
+
+          # Choose URL pattern based on detected asset type
+          if [ "$EXT" = "msi" ]; then
+            URL="https://github.com/${REPO}/releases/download/v\$version/MarpEditor_\$version_x64_en-US.msi"
+          else
+            URL="https://github.com/${REPO}/releases/download/v\$version/MarpEditor_\$version_x64-setup.exe"
+          fi
+
+          cat > scoop-repo/bucket/marpeditor.json <<EOF
+          {
+            "version": "${VERSION}",
+            "description": "Markdown presentation editor powered by Marp",
+            "homepage": "https://github.com/${REPO}",
+            "license": "MIT",
+            "architecture": {
+              "64bit": {
+                "url": "https://github.com/${REPO}/releases/download/v${VERSION}/${ASSET}",
+                "hash": "sha256:${HASH}"
+              }
+            },
+            "bin": "MarpEditor.exe",
+            "shortcuts": [
+              [
+                "MarpEditor.exe",
+                "MarpEditor"
+              ]
+            ],
+            "checkver": {
+              "github": "https://github.com/${REPO}"
+            },
+            "autoupdate": {
+              "architecture": {
+                "64bit": {
+                  "url": "${URL}"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Commit and push Scoop manifest
+        if: steps.release.outputs.asset_name != ''
+        run: |
+          cd scoop-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add bucket/marpeditor.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update MarpEditor to v${{ steps.release.outputs.version }}"
+            git push
+          fi
+
+  update-homebrew:
+    name: Update Homebrew Tap
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release assets
+        id: release
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          ASSETS_JSON=$(gh release view "$TAG" \
+            --repo "${{ github.repository }}" \
+            --json assets -q '.assets')
+
+          DMG_NAME=$(echo "$ASSETS_JSON" | jq -r '.[] | select(.name | test("_universal\\.dmg$"; "i")) | .name')
+          if [ -z "$DMG_NAME" ]; then
+            DMG_NAME=$(echo "$ASSETS_JSON" | jq -r '.[] | select(.name | test("\\.dmg$"; "i")) | .name')
+          fi
+
+          if [ -n "$DMG_NAME" ]; then
+            echo "dmg_name=$DMG_NAME" >> "$GITHUB_OUTPUT"
+          else
+            echo "No DMG found in release. Skipping Homebrew update."
+            exit 0
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download DMG and compute SHA256
+        if: steps.release.outputs.dmg_name != ''
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${{ steps.release.outputs.dmg_name }}"
+          curl -fsSL -o marpeditor.dmg "${URL}"
+          HASH=$(sha256sum marpeditor.dmg | cut -d' ' -f1)
+          echo "hash=$HASH" >> "$GITHUB_ENV"
+          echo "Computed hash: $HASH"
+
+      - name: Checkout Homebrew tap repo
+        if: steps.release.outputs.dmg_name != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/homebrew-marpeditor
+          token: ${{ secrets.TAP_PUSH_TOKEN }}
+          path: homebrew-repo
+
+      - name: Generate Homebrew Cask
+        if: steps.release.outputs.dmg_name != ''
+        run: |
+          VERSION="${{ steps.release.outputs.version }}"
+          HASH="${{ env.hash }}"
+          REPO="${{ github.repository }}"
+
+          mkdir -p homebrew-repo/Casks
+
+          cat > homebrew-repo/Casks/marpeditor.rb <<EOF
+          cask "marpeditor" do
+            version "${VERSION}"
+            sha256 "${HASH}"
+
+            url "https://github.com/${REPO}/releases/download/v#{version}/MarpEditor_#{version}_universal.dmg",
+                verified: "github.com/${REPO}/"
+            name "MarpEditor"
+            desc "Markdown presentation editor powered by Marp"
+            homepage "https://github.com/${REPO}"
+
+            auto_updates true
+
+            app "MarpEditor.app"
+          end
+          EOF
+
+      - name: Commit and push Homebrew Cask
+        if: steps.release.outputs.dmg_name != ''
+        run: |
+          cd homebrew-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/marpeditor.rb
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update MarpEditor to v${{ steps.release.outputs.version }}"
+            git push
+          fi

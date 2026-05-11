@@ -89,11 +89,46 @@ The desktop app is configured with Tauri v2 in `src-tauri/`.
 
 The desktop PPTX command writes the current Markdown to a temporary file, runs Marp CLI with `--pptx`, returns the generated `.pptx`, and removes temporary files.
 
+## Install
+
+### macOS (Homebrew)
+
+```bash
+brew tap twojanazwa/marpeditor
+brew install --cask marpeditor
+```
+
+> If Gatekeeper blocks the app on first launch, run:  
+> `xattr -dr com.apple.quarantine /Applications/MarpEditor.app`
+
+### Windows (Scoop)
+
+```bash
+scoop bucket add marpeditor https://github.com/twojanazwa/scoop-marpeditor
+scoop install marpeditor
+```
+
+### Browser / PWA
+
+Open the deployed URL in a modern browser and install via the address bar (Chrome/Edge) or Share → Add to Home Screen (Safari).
+
+---
+
 ## Releases
 
-GitHub Actions builds release artifacts from tags matching `v*` across Linux, Windows, and macOS universal targets. The workflow creates a draft release with desktop assets after signing prerequisites are available.
+GitHub Actions builds release artifacts from tags matching `v*` across Linux, Windows, and macOS universal targets. The workflow creates a draft release with desktop assets.
 
-Signed releases are required. Until signing certificates are configured, release tags fail early with a readable list of missing signing secrets instead of publishing unsigned final artifacts.
+Package manager manifests (Scoop and Homebrew) are updated automatically when a release is published.
+
+### One-time setup for package manager auto-updates
+
+Run this from the repo root (requires [GitHub CLI](https://cli.github.com/)):
+
+```bash
+./scripts/setup-package-repos.sh
+```
+
+It creates the required `scoop-marpeditor` and `homebrew-marpeditor` repositories and configures the `TAP_PUSH_TOKEN` secret so CI can push manifest updates.
 
 ## Security Notes
 

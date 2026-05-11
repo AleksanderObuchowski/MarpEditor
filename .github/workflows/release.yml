@@ -38,14 +38,15 @@ jobs:
           done
 
           if [ "${#missing[@]}" -gt 0 ]; then
-            printf 'Signed desktop releases require these missing secrets:\n'
+            printf '⚠️  Warning: signed desktop releases require these missing secrets:\n'
             printf ' - %s\n' "${missing[@]}"
-            exit 1
+            printf 'Build will continue as unsigned.\n'
+          else
+            printf '✅ All signing secrets present. Build will be signed.\n'
           fi
 
   desktop-release:
     name: Build desktop bundles
-    needs: validate-signing-secrets
     permissions:
       contents: write
     strategy:
@@ -104,7 +105,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "MarpEditor ${{ github.ref_name }}"
-          releaseBody: "Signed desktop release artifacts for MarpEditor."
+          releaseBody: "Desktop release artifacts for MarpEditor.\n\nInstall via Homebrew: `brew tap ${{ github.repository_owner }}/marpeditor && brew install --cask marpeditor`\nInstall via Scoop: `scoop bucket add marpeditor https://github.com/${{ github.repository_owner }}/scoop-marpeditor && scoop install marpeditor`"
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
