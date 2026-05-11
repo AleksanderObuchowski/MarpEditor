@@ -253,8 +253,8 @@ export function generatePreviewHtml(
       margin-bottom: 0;
     }
     section {
-      background-color: ${theme.backgroundColor} !important;
-      color: ${theme.fontColor} !important;
+      background-color: ${theme.backgroundColor};
+      color: ${theme.fontColor};
       font-family: ${theme.fontFamily} !important;
       ${theme.logo ? `background-image: url('${theme.logo}') !important;
       background-position: calc(100% - 24px) 24px !important;
@@ -262,7 +262,7 @@ export function generatePreviewHtml(
       background-size: ${theme.logoSize || 120}px auto !important;` : ''}
     }
     section h1, section h2, section h3, section h4, section h5, section h6 {
-      color: ${theme.fontColor} !important;
+      color: inherit;
     }
     section a {
       color: ${theme.accentColor} !important;
@@ -339,8 +339,8 @@ export function generatePresentationHtml(
       display: block !important;
     }
     section {
-      background-color: ${theme.backgroundColor} !important;
-      color: ${theme.fontColor} !important;
+      background-color: ${theme.backgroundColor};
+      color: ${theme.fontColor};
       font-family: ${theme.fontFamily} !important;
       ${theme.logo ? `background-image: url('${theme.logo}') !important;
       background-position: calc(100% - 24px) 24px !important;
@@ -348,7 +348,7 @@ export function generatePresentationHtml(
       background-size: ${theme.logoSize || 120}px auto !important;` : ''}
     }
     section h1, section h2, section h3, section h4, section h5, section h6 {
-      color: ${theme.fontColor} !important;
+      color: inherit;
     }
     section a {
       color: ${theme.accentColor} !important;
@@ -370,31 +370,151 @@ theme: default
 paginate: true
 ---
 
-# Welcome to MarpEditor
+<!-- _class: lead -->
+<!-- _paginate: false -->
 
-Create beautiful presentations with Markdown.
+<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+
+# **MarpEditor**
+
+<p style="font-size: 1.3em; opacity: 0.7; margin-top: 0.5em;">
+  Create beautiful presentations with Markdown
+</p>
+
+<p style="font-size: 0.9em; opacity: 0.5; margin-top: 2em;">
+  Edit on the left. Preview on the right.
+</p>
+
+</div>
 
 ---
 
-## Slide 2
+<!-- _backgroundColor: #1a1a1a -->
+<!-- _color: #f5f2eb -->
 
-- Bullet point one
-- Bullet point two
-- Bullet point three
+<div style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+
+# Why Markdown?
+
+<div style="font-size: 1.1em; line-height: 1.6; opacity: 0.85;">
+
+Focus on **content**, not formatting.
+
+> "The best slides are written, not designed."
+
+</div>
+
+</div>
 
 ---
 
-## Slide 3
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; height: 100%;">
+
+<div>
+
+## Powerful Editor
+
+- **Monaco** syntax highlighting
+- Formatting toolbar
+- Drag & drop images
+- Paste images from clipboard
+
+</div>
+
+<div>
+
+## Live Preview
+
+- Real-time Marp rendering
+- Slide navigation
+- Presentation mode
+- PDF export
+
+</div>
+
+</div>
+
+---
+
+<div style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+
+## Markdown = Superpowers
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+
+<div>
+
+### Lists
+
+- Ordered & unordered
+- Nested items
+- Task lists
+
+### Tables
 
 | Feature | Status |
 |---------|--------|
-| Markdown Editor | ✓ |
-| Live Preview | ✓ |
-| Export to PDF | ✓ |
+| Editor | ✓ |
+| Preview | ✓ |
+| Export | ✓ |
+
+</div>
+
+<div>
+
+### Code
+
+\`\`\`javascript
+function hello() {
+  return "Hello, World!";
+}
+\`\`\`
+
+### Quotes
+
+> Design is intelligence made visible.
+
+</div>
+
+</div>
+
+</div>
 
 ---
 
-## Thank You
+<!-- _backgroundColor: #c75b39 -->
+<!-- _color: #ffffff -->
 
-Made with **MarpEditor**
+<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+
+# Make It Yours
+
+<p style="font-size: 1.2em; opacity: 0.9; margin-top: 1em;">
+  Themes · Colors · Fonts · Logos · Slide Sizes
+</p>
+
+<p style="font-size: 0.9em; opacity: 0.7; margin-top: 2em;">
+  Open the Style panel and start customizing.
+</p>
+
+</div>
+
+---
+
+<!-- _class: lead -->
+<!-- _paginate: false -->
+
+<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+
+# Thank You
+
+<p style="font-size: 1.2em; margin-top: 1em;">
+  Built with <strong>MarpEditor</strong>
+</p>
+
+<p style="font-size: 0.85em; opacity: 0.5; margin-top: 2em;">
+  Try editing this slide →
+</p>
+
+</div>
 `
