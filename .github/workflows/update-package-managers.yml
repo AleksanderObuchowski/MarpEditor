@@ -3,6 +3,12 @@ name: Update Package Managers
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to process (e.g. v0.1.0)'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -15,7 +21,7 @@ jobs:
       - name: Get release assets
         id: release
         run: |
-          TAG="${{ github.event.release.tag_name }}"
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
           VERSION="${TAG#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
@@ -42,12 +48,15 @@ jobs:
       - name: Download installer and compute SHA256
         if: steps.release.outputs.asset_name != ''
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${{ steps.release.outputs.asset_name }}"
-          curl -fsSL -o installer "${URL}"
-          HASH=$(sha256sum installer | cut -d' ' -f1)
+          gh release download "${{ github.event.release.tag_name || github.event.inputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "${{ steps.release.outputs.asset_name }}" \
+            --dir .
+          HASH=$(sha256sum "${{ steps.release.outputs.asset_name }}" | cut -d' ' -f1)
           echo "hash=$HASH" >> "$GITHUB_ENV"
           echo "Computed hash: $HASH"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout Scoop bucket repo
         if: steps.release.outputs.asset_name != ''
@@ -128,7 +137,7 @@ jobs:
       - name: Get release assets
         id: release
         run: |
-          TAG="${{ github.event.release.tag_name }}"
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
           VERSION="${TAG#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
@@ -153,12 +162,15 @@ jobs:
       - name: Download DMG and compute SHA256
         if: steps.release.outputs.dmg_name != ''
         run: |
-          TAG="${{ github.event.release.tag_name }}"
-          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${{ steps.release.outputs.dmg_name }}"
-          curl -fsSL -o marpeditor.dmg "${URL}"
-          HASH=$(sha256sum marpeditor.dmg | cut -d' ' -f1)
+          gh release download "${{ github.event.release.tag_name || github.event.inputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "${{ steps.release.outputs.dmg_name }}" \
+            --dir .
+          HASH=$(sha256sum "${{ steps.release.outputs.dmg_name }}" | cut -d' ' -f1)
           echo "hash=$HASH" >> "$GITHUB_ENV"
           echo "Computed hash: $HASH"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout Homebrew tap repo
         if: steps.release.outputs.dmg_name != ''
