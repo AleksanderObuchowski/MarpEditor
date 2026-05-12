@@ -17,7 +17,10 @@ import {
   Link,
   LayoutTemplate,
   Upload,
-  Loader2
+  Loader2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight
 } from 'lucide-react'
 
 export default function EditorPanel() {
@@ -36,6 +39,7 @@ export default function EditorPanel() {
   const decorationsRef = useRef<string[]>([])
   const debouncedApplyRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  type ImageAlign = 'left' | 'center' | 'right' | null
   const [imageAtCursor, setImageAtCursor] = useState<{
     lineNumber: number
     startColumn: number
@@ -43,6 +47,7 @@ export default function EditorPanel() {
     alt: string
     url: string
     width: string | null
+    align: ImageAlign
   } | null>(null)
 
   const insertText = useCallback((before: string, after: string = '') => {
@@ -149,6 +154,7 @@ export default function EditorPanel() {
     const endColumn = startColumn + fullMatch.length
 
     const widthMatch = alt.match(/width:(\d+%?|\d+px)/)
+    const alignMatch = alt.match(/align:(left|center|right)/)
 
     return {
       lineNumber: pos.lineNumber,
@@ -157,27 +163,22 @@ export default function EditorPanel() {
       alt,
       url,
       width: widthMatch ? widthMatch[1] : null,
+      align: alignMatch ? (alignMatch[1] as ImageAlign) : null,
     }
   }, [])
 
-  const updateImageWidth = (widthValue: string) => {
+  const applyImageAltEdit = (
+    img: NonNullable<typeof imageAtCursor>,
+    newAlt: string,
+    nextState: Partial<NonNullable<typeof imageAtCursor>>,
+  ) => {
     const editor = editorRef.current
-    const img = imageAtCursor
     const monaco = monacoRef.current
-    if (!editor || !img || !monaco) return
-
-    let newAlt = img.alt
-      .replace(/\s*width:\d+%?/g, '')
-      .replace(/\s*width:\d+px/g, '')
-      .trim()
-
-    if (widthValue && widthValue !== 'auto') {
-      newAlt = newAlt ? `${newAlt} width:${widthValue}` : `width:${widthValue}`
-    }
+    if (!editor || !monaco) return
 
     const newText = `![${newAlt}](${img.url})`
 
-    editor.executeEdits('image-resize', [
+    editor.executeEdits('image-update', [
       {
         range: new monaco.Range(img.lineNumber, img.startColumn, img.lineNumber, img.endColumn),
         text: newText,
@@ -190,9 +191,40 @@ export default function EditorPanel() {
     setImageAtCursor({
       ...img,
       alt: newAlt,
-      width: widthValue === 'auto' ? null : widthValue,
       endColumn: img.startColumn + newText.length,
+      ...nextState,
     })
+  }
+
+  const updateImageWidth = (widthValue: string) => {
+    const img = imageAtCursor
+    if (!img) return
+
+    let newAlt = img.alt
+      .replace(/\s*width:\d+%?/g, '')
+      .replace(/\s*width:\d+px/g, '')
+      .trim()
+
+    if (widthValue && widthValue !== 'auto') {
+      newAlt = newAlt ? `${newAlt} width:${widthValue}` : `width:${widthValue}`
+    }
+
+    applyImageAltEdit(img, newAlt, {
+      width: widthValue === 'auto' ? null : widthValue,
+    })
+  }
+
+  const updateImageAlign = (alignValue: ImageAlign) => {
+    const img = imageAtCursor
+    if (!img) return
+
+    let newAlt = img.alt.replace(/\s*align:(left|center|right)/g, '').trim()
+
+    if (alignValue) {
+      newAlt = newAlt ? `${newAlt} align:${alignValue}` : `align:${alignValue}`
+    }
+
+    applyImageAltEdit(img, newAlt, { align: alignValue })
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -527,6 +559,28 @@ export default function EditorPanel() {
                 <option value="75%">75%</option>
                 <option value="100%">100%</option>
               </select>
+            </div>
+            <div className="flex items-center gap-0.5 ml-1">
+              {(['left', 'center', 'right'] as const).map((side) => {
+                const Icon = side === 'left' ? AlignLeft : side === 'center' ? AlignCenter : AlignRight
+                const active = imageAtCursor.align === side
+                return (
+                  <button
+                    key={side}
+                    onClick={() => updateImageAlign(active ? null : side)}
+                    className={`btn-press p-1.5 rounded-md transition-colors ${
+                      active
+                        ? 'text-[var(--accent)] bg-[var(--bg-panel)]'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel)]'
+                    }`}
+                    aria-label={`Align ${side}`}
+                    aria-pressed={active}
+                    title={`Align ${side}`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </button>
+                )
+              })}
             </div>
           </>
         )}

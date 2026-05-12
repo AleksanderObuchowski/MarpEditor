@@ -166,7 +166,27 @@ export function extractInlineImages(markdown: string): {
 }
 
 export function renderMarp(markdown: string, images: Record<string, string>) {
-  const processedMarkdown = resolveImages(markdown, images)
+  const resolved = resolveImages(markdown, images)
+
+  // Marpit recognizes `width:N%` / `height:N%` in image alt text as directives
+  // but silently drops them — it strips the tokens from alt and never applies
+  // a style. Rewrite percentage directives to a sentinel that Marpit ignores,
+  // so the tokens survive into the rendered alt where we can convert them
+  // back into inline `style="width:N%"`.
+  const processedMarkdown = resolved.replace(
+    /!\[([^\]]*)\]\(([^)]+)\)/g,
+    (full, alt: string, url: string) => {
+      let rewritten = alt.replace(
+        /\b(width|height):((?:\d*\.)?\d+%)/g,
+        (_m, dim: string, value: string) => `marp-pct-${dim}-${value.replace('%', '')}`,
+      )
+      rewritten = rewritten.replace(
+        /\balign:(left|center|right)\b/g,
+        (_m, side: string) => `marp-align-${side}`,
+      )
+      return rewritten === alt ? full : `![${rewritten}](${url})`
+    },
+  )
 
   const marp = new Marp({
     html: true,
@@ -178,36 +198,57 @@ export function renderMarp(markdown: string, images: Record<string, string>) {
   let html = renderResult.html
   const css = renderResult.css
 
-  // Post-process: Marpit ignores width/height percentages for inline images.
-  // We manually inject them as inline styles so they actually work.
+  // Post-process: read the sentinel tokens out of alt, convert them to inline
+  // styles, and strip them from the alt attribute so users don't see them.
   if (typeof DOMParser !== 'undefined') {
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, 'text/html')
 
+    const sizePattern = /\s*marp-pct-(width|height)-((?:\d*\.)?\d+)\s*/g
+    const alignPattern = /\s*marp-align-(left|center|right)\s*/g
+
     for (const img of doc.querySelectorAll('img')) {
       const alt = img.getAttribute('alt') || ''
-      const widthMatch = alt.match(/width:((?:\d*\.)?\d+%)/)
-      const heightMatch = alt.match(/height:((?:\d*\.)?\d+%)/)
+      const sizeMatches = [...alt.matchAll(sizePattern)]
+      const alignMatches = [...alt.matchAll(alignPattern)]
+      if (sizeMatches.length === 0 && alignMatches.length === 0) continue
 
-      if (widthMatch || heightMatch) {
-        const style = img.getAttribute('style') || ''
-        const styleMap = new Map<string, string>()
-
-        for (const rule of style.split(';').filter(Boolean)) {
-          const colonIdx = rule.indexOf(':')
-          if (colonIdx > -1) {
-            styleMap.set(rule.slice(0, colonIdx).trim(), rule.slice(colonIdx + 1).trim())
-          }
+      const style = img.getAttribute('style') || ''
+      const styleMap = new Map<string, string>()
+      for (const rule of style.split(';').filter(Boolean)) {
+        const colonIdx = rule.indexOf(':')
+        if (colonIdx > -1) {
+          styleMap.set(rule.slice(0, colonIdx).trim(), rule.slice(colonIdx + 1).trim())
         }
-
-        if (widthMatch) styleMap.set('width', widthMatch[1])
-        if (heightMatch) styleMap.set('height', heightMatch[1])
-
-        const newStyle = Array.from(styleMap.entries())
-          .map(([k, v]) => `${k}:${v}`)
-          .join(';')
-        img.setAttribute('style', newStyle)
       }
+
+      for (const [, dim, value] of sizeMatches) {
+        styleMap.set(dim, `${value}%`)
+      }
+
+      if (alignMatches.length > 0) {
+        const side = alignMatches[alignMatches.length - 1][1]
+        styleMap.set('display', 'block')
+        if (side === 'center') {
+          styleMap.set('margin-left', 'auto')
+          styleMap.set('margin-right', 'auto')
+        } else if (side === 'left') {
+          styleMap.set('margin-left', '0')
+          styleMap.set('margin-right', 'auto')
+        } else {
+          styleMap.set('margin-left', 'auto')
+          styleMap.set('margin-right', '0')
+        }
+      }
+
+      const newStyle = Array.from(styleMap.entries())
+        .map(([k, v]) => `${k}:${v}`)
+        .join(';')
+      img.setAttribute('style', newStyle)
+      img.setAttribute(
+        'alt',
+        alt.replace(sizePattern, ' ').replace(alignPattern, ' ').trim(),
+      )
     }
 
     html = doc.body.innerHTML
