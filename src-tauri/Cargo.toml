@@ -1,6 +1,6 @@
 [package]
 name = "marpeditor"
-version = "0.1.4"
+version = "0.1.5"
 description = "Desktop shell for MarpEditor"
 authors = ["MarpEditor contributors"]
 edition = "2021"
