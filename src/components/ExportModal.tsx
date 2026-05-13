@@ -36,17 +36,17 @@ export default function ExportModal() {
 
   const exportPDF = () => {
     setExporting('pdf')
-    const printWindow = window.open('', '_blank')
+    const html = generatePreviewHtml(markdown, theme, images)
+    const blob = new Blob([html], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+
+    const printWindow = window.open(url, '_blank')
     if (!printWindow) {
+      URL.revokeObjectURL(url)
       alert('Popup was blocked. Please allow popups for this site to export PDF.')
       setExporting(null)
       return
     }
-
-    const html = generatePreviewHtml(markdown, theme, images)
-    printWindow.document.open()
-    printWindow.document.write(html)
-    printWindow.document.close()
 
     let printed = false
     const triggerPrint = () => {
@@ -56,18 +56,16 @@ export default function ExportModal() {
         printWindow.focus()
         printWindow.print()
       } finally {
+        // Defer revoke so the popup keeps a usable URL for the print preview
+        setTimeout(() => URL.revokeObjectURL(url), 60_000)
         setExporting(null)
         setExportModalOpen(false)
       }
     }
 
-    if (printWindow.document.readyState === 'complete') {
-      setTimeout(triggerPrint, 300)
-    } else {
-      printWindow.addEventListener('load', () => setTimeout(triggerPrint, 300), { once: true })
-      // Safety net in case the load event never fires (e.g. blocked subresources)
-      setTimeout(triggerPrint, 5000)
-    }
+    printWindow.addEventListener('load', () => setTimeout(triggerPrint, 300), { once: true })
+    // Safety net in case the load event never fires (e.g. blocked subresources)
+    setTimeout(triggerPrint, 5000)
   }
 
   const exportPPTX = async () => {
