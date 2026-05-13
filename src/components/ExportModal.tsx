@@ -36,16 +36,37 @@ export default function ExportModal() {
 
   const exportPDF = () => {
     setExporting('pdf')
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer')
-    if (printWindow) {
-      const html = generatePreviewHtml(markdown, theme, images)
-      printWindow.document.write(html)
-      printWindow.document.close()
-      setTimeout(() => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      alert('Popup was blocked. Please allow popups for this site to export PDF.')
+      setExporting(null)
+      return
+    }
+
+    const html = generatePreviewHtml(markdown, theme, images)
+    printWindow.document.open()
+    printWindow.document.write(html)
+    printWindow.document.close()
+
+    let printed = false
+    const triggerPrint = () => {
+      if (printed) return
+      printed = true
+      try {
+        printWindow.focus()
         printWindow.print()
+      } finally {
         setExporting(null)
         setExportModalOpen(false)
-      }, 800)
+      }
+    }
+
+    if (printWindow.document.readyState === 'complete') {
+      setTimeout(triggerPrint, 300)
+    } else {
+      printWindow.addEventListener('load', () => setTimeout(triggerPrint, 300), { once: true })
+      // Safety net in case the load event never fires (e.g. blocked subresources)
+      setTimeout(triggerPrint, 5000)
     }
   }
 
